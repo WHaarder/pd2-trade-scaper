@@ -80,31 +80,28 @@ def _next_page(driver):
         try:
             page_indicator = driver.find_element_by_xpath("//*[@id='page-top']/div[11]/div/nav/ul/li["+str(n)+"]/button")
             page_indicator.click()
-            return "Intermediate page"
         except:
-            if n == 3:
-                return "Final page"
             continue
+        
+def main_scraper(driver):
+    listings_clean = []
+    list_temp = []
+    list_cache=[]
+    while True:
+        raw_data = _get_raw_listings(driver)
+        list_temp = []
+        list_temp, _ = _fetch_clean_data(driver, raw_data, list_temp)
+        if list_temp == list_cache:
+            break
+        
+        listings_clean = listings_clean + list_temp
+        list_cache = list_temp
+        _next_page(driver)
+        time.sleep(0.5)    
+    
+    return pd.DataFrame(listings_clean)
         
 driver = _init()
 _login(driver)   
 _search_for_item(driver, "Stone Of Jordan")
-
-listings_clean = []
-list_temp = []
-list_cache=[]
-while True:
-    raw_data = _get_raw_listings(driver)
-    list_temp = []
-    list_temp, _ = _fetch_clean_data(driver, raw_data, list_temp)
-    if list_temp == list_cache:
-        break
-    
-    listings_clean = listings_clean + list_temp
-    list_cache = list_temp
-    status = _next_page(driver)
-    time.sleep(0.5)
-
-
-
-all_listings = pd.DataFrame(listings_clean)
+all_listings = main_scraper(driver)
